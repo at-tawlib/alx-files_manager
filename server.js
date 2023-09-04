@@ -1,5 +1,5 @@
 import express from 'express';
-import {env } from 'process';
+import { env } from 'process';
 
 const router = require('./routes/index');
 
@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(router);
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port: ${PORT}`);
+  console.log(`Server running on port: ${PORT}`);
 });
 
 export default app;
