@@ -25,6 +25,14 @@ class DBClient {
     const files = db.collection('files');
     return files.countDocuments();
   }
+  
+  async userExist(email) {
+    const user = await this.getUser(email);
+    if(user) {
+      return true;
+    }
+    return false;
+  }
 }
 
 const dbClient = new DBClient();
