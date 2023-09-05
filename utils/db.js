@@ -1,5 +1,6 @@
 import { MongoClient } from 'mongodb';
 import { env } from 'process';
+import { hashPassword } from './utils';
 
 class DBClient {
   constructor() {
@@ -25,13 +26,17 @@ class DBClient {
     const files = db.collection('files');
     return files.countDocuments();
   }
-  
+
   async userExist(email) {
-    const user = await this.getUser(email);
-    if(user) {
-      return true;
-    }
-    return false;
+    const db = this.client.db();
+    const user = db.collection('users');
+    return user.findOne({ email });
+  }
+
+  async createUser(email, password) {
+    const db = this.client.db();
+    const user = db.collection('users').insertOne({ email, password: hashPassword(password) });
+    return user;
   }
 }
 
