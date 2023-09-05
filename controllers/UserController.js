@@ -19,7 +19,7 @@ class UsersController {
       res.end();
       return;
     }
-
+    
     const user = await dbClient.createUser(email, password);
     const id = user.insertedId;
     res.status(201).json({ id, email });
