@@ -30,7 +30,7 @@ class AuthController {
     }
 
     // get email and password from the decoded token
-    const [ email, password ] = decodedToken.split(':');
+    const [email, password] = decodedToken.split(':');
     const user = await dbClient.getUser(email);
     if (!user) {
       res.status(401).json({ error: 'Unauthorized' });
