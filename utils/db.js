@@ -1,6 +1,7 @@
 import { MongoClient } from 'mongodb';
 import { env } from 'process';
 import { hashPassword } from './utils';
+import { mongo } from 'mongoose';
 
 class DBClient {
   constructor() {
@@ -37,6 +38,25 @@ class DBClient {
     const db = this.client.db();
     const user = db.collection('users').insertOne({ email, password: hashPassword(password) });
     return user;
+  }
+
+  async getUser(email) {
+    const db = this.client.db();
+    const users = db.collection('users').find({ email }).toArray();
+    if (!users.length) {
+      return null;
+    }
+    return users[0];
+  }
+
+  async getUserById(userId) {
+    const _id = new mongo.ObjectId(userId);
+    const db = this.client.db();
+    const users = db.collection('users').find({ _id }).toArray();
+    if (!users.length) {
+      return null;
+    }
+    return users[0];
   }
 }
 
