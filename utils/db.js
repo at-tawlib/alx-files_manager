@@ -42,7 +42,7 @@ class DBClient {
 
   async getUser(email) {
     const db = this.client.db();
-    const users = db.collection('users').find({ email }).toArray();
+    const users = await db.collection('users').find({ email }).toArray();
     if (!users.length) {
       return null;
     }
