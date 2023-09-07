@@ -75,30 +75,6 @@ class AuthController {
     await redisClient.del(`auth_${token}`);
     res.status(204).end();
   }
-
-  static async getMe(req, res) {
-    const token = req.headers['x-token'];
-    if (!token) {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
-    }
-
-    const id = await redisClient.get(`auth_${token}`);
-    if (!id) {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
-    }
-    const user = await dbClient.getUserById(id);
-    if (!user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
-    }
-
-    res.json({ id: user._id, email: user.email }).end();
-  }
 }
 
 export default AuthController;

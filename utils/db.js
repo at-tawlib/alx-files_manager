@@ -1,7 +1,7 @@
 import { MongoClient } from 'mongodb';
 import { env } from 'process';
 import { hashPassword } from './utils';
-import { mongo } from 'mongoose';
+import { ObjectId } from 'mongodb';
 
 class DBClient {
   constructor() {
@@ -50,13 +50,10 @@ class DBClient {
   }
 
   async getUserById(userId) {
-    const _id = new mongo.ObjectId(userId);
     const db = this.client.db();
-    const users = db.collection('users').find({ _id }).toArray();
-    if (!users.length) {
-      return null;
-    }
-    return users[0];
+    const user = await db.collection('users').findOne({ _id: ObjectId(userId) });
+    console.log("user", user)
+    return user;
   }
 }
 
