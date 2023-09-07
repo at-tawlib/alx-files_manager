@@ -52,7 +52,6 @@ class DBClient {
   async getUserById(userId) {
     const db = this.client.db();
     const user = await db.collection('users').findOne({ _id: ObjectId(userId) });
-    console.log("user", user)
     return user;
   }
 }
