@@ -45,7 +45,7 @@ class UsersController {
       return;
     }
 
-    const usr = { id: user._id, ...user};
+    const usr = { id: user._id, ...user };
     delete usr._id;
     delete usr.password;
     res.status(200).json(usr);
