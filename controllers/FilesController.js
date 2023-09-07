@@ -5,7 +5,7 @@ class FilesController {
   static async postUpload(req, res) {
     const token = req.headers['x-token'];
     const {
-      name, type, parentId, isPublic, data,
+      name, type, parentId, isPublic = false, data,
     } = req.body;
 
     if (!token) {
@@ -44,7 +44,6 @@ class FilesController {
       }
 
       const newFile = await dbClient.saveFile(userId, name, type, isPublic, parentId, data);
-      // const { error, code, newFile } = await dbClient.saveFile(userId, fileP)
       return res.status(201).send(newFile);
     } catch (err) {
       return res.status(400).json({ error: err.message });
