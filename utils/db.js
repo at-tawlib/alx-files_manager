@@ -58,51 +58,9 @@ class DBClient {
     return user;
   }
 
-  async saveFile(userId, name, type, isPublic, parentId, data) {
-    if (parentId !== 0) parentId = ObjectId(parentId);
-    const query = {
-      userId: ObjectId(userId),
-      name,
-      type,
-      isPublic,
-      parentId
-    };
-
-    if (type !== 'folder') {
-      const fileNameUID = v4();
-
-      const fileDataDecoded = Buffer.from(data, 'base64');
-      const path = `${FOLDER_PATH}/${fileNameUID}`;
-
-      query.localPath = path;
-
-      try {
-        await promises.mkdir(FOLDER_PATH, { recursive: true });
-        await promises.writeFile(path, fileDataDecoded);
-      } catch(err) {
-        return { error: err.message, code: 400 };
-      }
-      
-      const db = this.client.db();
-      const result = await db.collection('files').insertOne(query);
-
-      const file = { id: query._id, ...query};
-      delete file.localPath;
-      delete file._id;
-
-      const newFile = { id: result.insertedId, ...file };
-      return newFile;
-    }
-  }
-  async filterFiles(filters) {
+  filesCollection() {
     const db = this.client.db();
-    const filesCollection = db.collection('files');
-    // get ids and convert it to ObjectId
-    const idFilters = ['_id', 'userId', 'parentId'].filter((prop) => prop in filters && filters[prop] !== '0');
-    idFilters.forEach((i) => {
-      filters[i] = ObjectId(filters[i]);
-    });
-    return filesCollection.findOne(filters);
+    return db.collection('files');
   }
 }
 
