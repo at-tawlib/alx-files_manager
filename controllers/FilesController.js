@@ -1,17 +1,11 @@
-import dbClient from "../utils/db";
-import redisClient from "../utils/redis";
-import File, { FOLDER, FilesCollection } from "../utils/file";
+import File from '../utils/file';
 import fileQueue from '../worker';
+import { getCurrentUser } from '../utils/auth';
 
 class FilesController {
   static async postUpload(req, res) {
-
     // get user from token
-    const token = req.headers['x-token'];
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    const userId = await redisClient.get(`auth_${token}`);
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const user = await dbClient.getUserById(userId);
+    const user = await getCurrentUser(req);
     if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
     const {
@@ -23,10 +17,8 @@ class FilesController {
       const file = new File(
         user._id, name, type, parentId, isPublic, data,
       );
-      console.log("File", file)
 
       const savedFile = await file.save();
-      console.log("saved file", savedFile);
       if (savedFile.type === 'image') {
         fileQueue.add({
           userId: user.id,
@@ -34,9 +26,8 @@ class FilesController {
         });
       }
       return res.status(201).json(savedFile);
-    } catch(err) {
-      console.log("catch error", err);
-      return res.status(400).json({ error: err.mesage});
+    } catch (err) {
+      return res.status(400).json({ error: err.mesage });
     }
   }
 }
