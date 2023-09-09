@@ -1,72 +1,88 @@
-import sha1 from 'sha1';
-import { v4 } from 'uuid';
-import redisClient from '../utils/redis';
-import dbClient from '../utils/db';
+import {
+  authenticateUser,
+  deleteSessionToken,
+  generateSessionToken,
+  getBasicAuthToken,
+  getCurrentUser,
+  getSessionToken,
+} from '../utils/auth';
 
+/**
+ * AuthController class to handle authentication
+ */
 class AuthController {
-  static async getConnect(req, res) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
+  /**
+   * Returns a session token for a given user by authenticating the user's
+   * email and password in the request's Basic Auth header. If successful,
+   * returns a 200 status with the token in the response body. If authentication
+   * fails, returns a 401 status with an error message in the response body.
+   *
+   * @param {Object} request - the HTTP request object
+   * @param {Object} response - the HTTP response object
+   * @return {Promise} a promise that resolves to the session token or rejects
+   * with an error
+   */
+  static async getConnect(request, response) {
+    const { email, password } = getBasicAuthToken(request);
+    if (!email || !password) {
+      return response.status(401).json({
+        error: 'Unauthorized',
+      });
     }
 
-    // get and check token type from authHeader
-    const tokenType = authHeader.substring(0, 6);
-    if (tokenType !== 'Basic ') {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
-    }
-    const token = authHeader.substring(6);
-
-    // decode the token
-    const decodedToken = Buffer.from(token, 'base64').toString('utf8');
-    if (!decodedToken.includes(':')) {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
-    }
-
-    // get email and password from the decoded token
-    const [email, password] = decodedToken.split(':');
-    const user = await dbClient.getUser(email);
+    const user = await authenticateUser(email, password);
     if (!user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
+      return response.status(401).json({
+        error: 'Unauthorized',
+      });
     }
-
-    if (user.password !== sha1(password)) {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
-    }
-
-    const accessToken = v4();
-    await redisClient.set(`auth_${accessToken}`, user._id.toString(), 60 * 60 * 24);
-    res.status(200).json({ token: accessToken });
-    res.end();
+    const token = await generateSessionToken(user._id);
+    return response.status(200).json(token);
   }
 
-  static async getDisconnect(req, res) {
-    const token = req.headers['x-token'];
+  /**
+   * Deletes the session token of a user and logs them out.
+   *
+   * @param {Object} request - the request object from the client
+   * @param {Object} response - the response object to send to the client
+   * @return {Object} - a 204 status code if successful, otherwise a 401 status
+   * code with an error message
+   */
+  static async getDisconnect(request, response) {
+    const token = getSessionToken(request);
     if (!token) {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
+      return response.status(401).json({
+        error: 'Unauthorized',
+      });
     }
 
-    const id = await redisClient.get(`auth_${token}`);
-    if (!id) {
-      res.status(401).json({ error: 'Unauthorized' });
-      res.end();
-      return;
+    const result = await deleteSessionToken(token);
+    if (!result) {
+      return response.status(401).json({
+        error: 'Unauthorized',
+      });
     }
+    return response.sendStatus(204);
+  }
 
-    await redisClient.del(`auth_${token}`);
-    res.status(204).end();
+  /**
+   * Asynchronously retrieves the authenticated user's information from the
+   * session token.
+   *
+   * @param {Object} request - The HTTP request object.
+   * @param {Object} response - The HTTP response object.
+   * @return {Object} Returns a JSON response with the authenticated user's
+   * information on success, or an error message with a 401 status code if the
+   * user is unauthorized.
+   */
+  static async getMe(request, response) {
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return response.status(401).json({
+        error: 'Unauthorized',
+      });
+    }
+    return response.status(200).json(currentUser);
   }
 }
 
