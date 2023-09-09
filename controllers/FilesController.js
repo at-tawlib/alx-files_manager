@@ -66,6 +66,30 @@ class FilesController {
 
     return res.status(200).json(files);
   }
+
+  // set isPublic to true
+  static async putPublish(req, res) {
+    return FilesController.updatePublication(req, res, true);
+  }
+
+  // set isPublic to false
+  static async putUnpublish(req, res) {
+    return FilesController.updatePublication(req, res, false);
+  }
+
+  static async updatePublication(req, res, isPublished) {
+    // get user
+    const user = await getCurrentUser(req);
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { id } = req.params;
+    const filesCollection = new FilesCollection();
+    const file = await filesCollection.updateFilePublication(
+      user.id, id, isPublished,
+    );
+    if (!file) return res.status(404).json({ error: 'Not foudn' });
+    return res.status(200).json(file);
+  }
 }
 
 export default FilesController;

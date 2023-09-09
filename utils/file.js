@@ -66,6 +66,23 @@ export class FilesCollection {
     ).map(FilesCollection.removeLocalPath);
   }
 
+  async updateFilePublication(userId, fileId, isPublished) {
+    if (!ObjectId.isValid(fileId)) return null;
+    const result = await this.files.updateOne(
+      {
+        _id: ObjectId(fileId),
+        userId: ObjectId(userId),
+      },
+      { $set: { isPublic: isPublished } },
+    );
+
+    if (result.matchedCount !== 1) return null;
+    const doc = await this.findById(fileId);
+    return FilesCollection.removeLocalPath(
+      FilesCollection.replaceDefaultMongoId(doc),
+    );
+  }
+
   static replaceDefaultMongoId(document) {
     const { _id, ...rest } = document;
     return { id: _id, ...rest };
