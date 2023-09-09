@@ -1,4 +1,4 @@
-import File from '../utils/file';
+import File, { FilesCollection } from '../utils/file';
 import fileQueue from '../worker';
 import { getCurrentUser } from '../utils/auth';
 
@@ -29,6 +29,42 @@ class FilesController {
     } catch (err) {
       return res.status(400).json({ error: err.mesage });
     }
+  }
+
+  // retrieves file document based on the ID
+  static async getShow(req, res) {
+    // get user
+    const user = await getCurrentUser(req);
+
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { id } = req.params;
+    const filesColection = new FilesCollection();
+    const file = await filesColection.findUserFileById(user.id, id);
+    if (!file) return res.status(401).json({ error: 'Not found' });
+
+    return res.status(200).json(file);
+  }
+
+  // retrieve all users file documents for a specific parentId and with pagination
+  static async getIndex(req, res) {
+    // get current user
+    const user = await getCurrentUser(req);
+
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    let { parentId, page } = req.query;
+    if (parentId === '0' || !parentId) parentId = 0;
+    page = Number.isNaN(page) ? 0 : Number(page);
+
+    const filesCollection = new FilesCollection();
+    const files = await filesCollection.findAllUserFilesByParentId(
+      user.id,
+      parentId,
+      page,
+    );
+
+    return res.status(200).json(files);
   }
 }
 
